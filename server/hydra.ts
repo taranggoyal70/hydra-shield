@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import path from "node:path";
 import type { GraphEdge, GraphNode, RelationshipType } from "./domain.js";
 
 interface HydraValue {
@@ -43,13 +46,44 @@ function pathProperty(node: NativePathNode, property: string): unknown {
   return value && typeof value === "object" ? Object.values(value)[0] : undefined;
 }
 
-export function terminalNodeIdsForKind(rows: Record<string, unknown>[], kind: string): number[] {
-  const ids = rows.flatMap((row) => {
+export interface HydraServicePath {
+  id: number;
+  name: string;
+  owner: string;
+  tier: string;
+  path: string[];
+  hops: number;
+}
+
+export function servicePathsFromRows(rows: Record<string, unknown>[]): HydraServicePath[] {
+  const services = new Map<number, HydraServicePath>();
+  for (const row of rows) {
     const path = row.path as NativePath | undefined;
     const terminal = path?.nodes?.at(-1);
-    return terminal && pathProperty(terminal, "kind") === kind ? [terminal.id] : [];
-  });
-  return [...new Set(ids)];
+    if (!terminal || pathProperty(terminal, "kind") !== "service" || !path?.nodes) continue;
+
+    const servicePath: HydraServicePath = {
+      id: terminal.id,
+      name: String(pathProperty(terminal, "name") ?? terminal.id),
+      owner: String(pathProperty(terminal, "owner") ?? "Unassigned"),
+      tier: String(pathProperty(terminal, "tier") ?? "Unclassified"),
+      path: path.nodes
+        .map((node) => String(pathProperty(node, "name") ?? node.id))
+        .reverse(),
+      hops: path.nodes.length - 1,
+    };
+    const existing = services.get(terminal.id);
+    if (!existing || servicePath.hops < existing.hops) services.set(terminal.id, servicePath);
+  }
+  return [...services.values()].sort((left, right) => left.id - right.id);
+}
+
+function localHydraToken(): string {
+  try {
+    return readFileSync(path.resolve(process.cwd(), ".hydradb/auth-token"), "utf8").trim();
+  } catch {
+    return "";
+  }
 }
 
 export class HydraClient {
@@ -66,10 +100,11 @@ export class HydraClient {
     this.graphId = process.env.HYDRA_GRAPH_ID ?? "default";
     this.namespace = process.env.HYDRA_NAMESPACE ?? "hydrashield";
     this.cellId = process.env.HYDRA_CELL_ID ?? "cell-0";
-    this.token = process.env.HYDRA_TOKEN ?? "local-development-token-32-bytes";
+    this.token = process.env.HYDRA_TOKEN ?? localHydraToken();
   }
 
   async isAvailable(): Promise<boolean> {
+    if (!this.token) return false;
     try {
       const response = await fetch(`${this.adminUrl}/readyz`, { signal: AbortSignal.timeout(700) });
       return response.ok;
@@ -82,6 +117,9 @@ export class HydraClient {
     query: string,
     parameters: Record<string, unknown> = {},
   ): Promise<{ rows: Record<string, unknown>[]; readEpoch?: number; bookmark?: string }> {
+    if (!this.token) {
+      throw new Error("HYDRA_TOKEN is required, or run npm run setup:hydra for local development.");
+    }
     const response = await fetch(`${this.baseUrl}/v1/graphs/${this.graphId}/query`, {
       method: "POST",
       headers: {
@@ -91,6 +129,7 @@ export class HydraClient {
       },
       body: JSON.stringify({
         cell_id: this.cellId,
+        query_id: `hydrashield-${randomUUID()}`,
         query,
         parameters,
         consistency: "causal",

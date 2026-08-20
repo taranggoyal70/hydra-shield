@@ -28,4 +28,4 @@ services:
 
 secrets:
   hydra_token:
-    file: ./infra/hydra-auth-token
+    file: ./.hydradb/auth-token

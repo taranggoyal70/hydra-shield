@@ -66,33 +66,54 @@ function packageNameFromPath(path: string): string {
   return index === -1 ? path : path.slice(index + marker.length);
 }
 
+function resolveDependencyPath(
+  sourcePath: string,
+  dependency: string,
+  packages: Record<string, PackageLockEntry>,
+): string | undefined {
+  let cursor = sourcePath;
+  while (true) {
+    const candidate = cursor ? `${cursor}/node_modules/${dependency}` : `node_modules/${dependency}`;
+    if (packages[candidate]) return candidate;
+    const parentMarker = cursor.lastIndexOf("/node_modules/");
+    if (parentMarker === -1) {
+      if (!cursor) return undefined;
+      cursor = "";
+    } else {
+      cursor = cursor.slice(0, parentMarker);
+    }
+  }
+}
+
 export function parseNpmLockfile(serviceName: string, lockfile: PackageLock): LockfileGraph {
   if (!lockfile.packages || typeof lockfile.packages !== "object") {
     throw new Error("HydraShield supports npm package-lock files with a packages map (lockfile v2 or v3). ");
   }
 
   const serviceId = stableId(`service:${serviceName}`);
-  const nodes: GraphNode[] = [
-    { id: serviceId, kind: "service", name: serviceName, owner: "Imported", tier: "unclassified" },
-  ];
-  const edges: GraphEdge[] = [];
-  const idsByName = new Map<string, number>();
+  const nodes = new Map<number, GraphNode>([
+    [serviceId, { id: serviceId, kind: "service", name: serviceName, owner: "Imported", tier: "unclassified" }],
+  ]);
+  const edges = new Map<number, GraphEdge>();
+  const idsByPath = new Map<string, number>();
 
   for (const [path, entry] of Object.entries(lockfile.packages)) {
     if (path === "" || !entry.version) continue;
     const packageName = entry.name ?? packageNameFromPath(path);
     const displayName = `${packageName}@${entry.version}`;
     const id = stableId(`package:${displayName}`);
-    idsByName.set(packageName, id);
-    nodes.push({ id, kind: "package", name: displayName, status: "observed" });
+    idsByPath.set(path, id);
+    nodes.set(id, { id, kind: "package", name: displayName, status: "observed" });
   }
 
   const root = lockfile.packages[""];
   for (const dependency of Object.keys(root?.dependencies ?? {})) {
-    const target = idsByName.get(dependency);
+    const resolvedPath = resolveDependencyPath("", dependency, lockfile.packages);
+    const target = resolvedPath ? idsByPath.get(resolvedPath) : undefined;
     if (!target) continue;
-    edges.push({
-      id: stableId(`edge:${serviceId}:${target}`),
+    const id = stableId(`edge:${serviceId}:${target}`);
+    edges.set(id, {
+      id,
       source: serviceId,
       target,
       type: "DEPENDS_ON",
@@ -102,14 +123,15 @@ export function parseNpmLockfile(serviceName: string, lockfile: PackageLock): Lo
 
   for (const [path, entry] of Object.entries(lockfile.packages)) {
     if (path === "" || !entry.version) continue;
-    const sourceName = entry.name ?? packageNameFromPath(path);
-    const source = idsByName.get(sourceName);
+    const source = idsByPath.get(path);
     if (!source) continue;
     for (const dependency of Object.keys(entry.dependencies ?? {})) {
-      const target = idsByName.get(dependency);
+      const resolvedPath = resolveDependencyPath(path, dependency, lockfile.packages);
+      const target = resolvedPath ? idsByPath.get(resolvedPath) : undefined;
       if (!target) continue;
-      edges.push({
-        id: stableId(`edge:${source}:${target}`),
+      const id = stableId(`edge:${source}:${target}`);
+      edges.set(id, {
+        id,
         source,
         target,
         type: "DEPENDS_ON",
@@ -118,7 +140,7 @@ export function parseNpmLockfile(serviceName: string, lockfile: PackageLock): Lo
     }
   }
 
-  return { nodes, edges };
+  return { nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
 export function computeBlastRadius(

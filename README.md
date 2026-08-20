@@ -4,6 +4,8 @@ HydraShield is a graph-native incident response console for software supply-chai
 
 Built for Hack Hydra 2026, Track 02A: Supply-chain blast radius.
 
+**Live demo:** [hydra-shield-six.vercel.app](https://hydra-shield-six.vercel.app)
+
 ## The demo
 
 The included incident simulates a stolen npm automation token publishing a credential-stealing package at 09:00. By 09:06, the artifact has reached direct and transitive dependents across a service estate. HydraShield:
@@ -58,6 +60,7 @@ Prerequisites: Node.js 22+, npm and Docker.
 
 ```bash
 npm install
+npm run setup:hydra
 HYDRA_UID=$(id -u) HYDRA_GID=$(id -g) docker compose up -d hydradb
 npm run seed
 npm run dev
@@ -87,13 +90,13 @@ The defaults match `docker-compose.yml`.
 | --- | --- | --- |
 | `HYDRA_URL` | `http://127.0.0.1:8443` | HydraDB HTTP endpoint |
 | `HYDRA_ADMIN_URL` | `http://127.0.0.1:9090` | HydraDB readiness endpoint |
-| `HYDRA_TOKEN` | local development token | Bearer token |
+| `HYDRA_TOKEN` | generated local token or unset | Bearer token for a remote HydraDB deployment |
 | `HYDRA_NAMESPACE` | `hydrashield` | Graph namespace |
 | `HYDRA_GRAPH_ID` | `default` | Graph identifier |
 | `HYDRA_CELL_ID` | `cell-0` | HydraDB cell |
 | `PORT` | `8787` | API port |
 
-Replace the committed development token before any shared or production deployment.
+`npm run setup:hydra` writes a random, ignored local token to `.hydradb/auth-token`. Never commit production credentials.
 
 ## Verification
 

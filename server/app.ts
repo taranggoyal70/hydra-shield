@@ -1,11 +1,11 @@
 import express from "express";
 import path from "node:path";
-import { activeIncident, blastRadiusCypher, demoEdges, demoNodes } from "./demo-data.js";
+import { activeIncident, blastRadiusCypher, correlationCypher, demoEdges, demoNodes } from "./demo-data.js";
 import { computeBlastRadius, parseNpmLockfile } from "./domain.js";
-import { HydraClient, terminalNodeIdsForKind } from "./hydra.js";
+import { HydraClient, servicePathsFromRows } from "./hydra.js";
 
 const playbook = [
-  { id: "freeze", title: "Freeze affected deploys", detail: "Pause promotion for the four exposed services.", owner: "Platform", eta: "Now" },
+  { id: "freeze", title: "Freeze affected deploys", detail: "Pause promotion for every service returned by the traversal.", owner: "Platform", eta: "Now" },
   { id: "pin", title: "Pin the last trusted version", detail: "Override @scope/request to 7.4.1 in every affected lockfile.", owner: "Service owners", eta: "4 min" },
   { id: "rotate", title: "Rotate exposed credentials", detail: "Revoke CI, registry, cloud and developer tokens reachable during install.", owner: "Security", eta: "12 min" },
   { id: "rebuild", title: "Rebuild from clean runners", detail: "Invalidate caches and rebuild artifacts created after 09:00 PT.", owner: "Release", eta: "18 min" },
@@ -65,21 +65,36 @@ export function createApp(hydra = new HydraClient()) {
     const started = performance.now();
     let source: "hydradb" | "snapshot" = "snapshot";
     let readEpoch: number | undefined;
-    let matchedIds: number[] | undefined;
+    let liveServices: ReturnType<typeof servicePathsFromRows> | undefined;
+    let relatedRisk = {
+      maintainer: "release-bot-17",
+      siblingPackage: "@sc0pe/request@7.4.2",
+      confidence: 94,
+    };
 
     if (await hydra.isAvailable()) {
       try {
-        const result = await hydra.query(blastRadiusCypher, { badId: packageId });
+        const [result, correlation] = await Promise.all([
+          hydra.query(blastRadiusCypher, { badId: packageId }),
+          hydra.query(correlationCypher, { badId: packageId }),
+        ]);
         source = "hydradb";
         readEpoch = result.readEpoch;
-        matchedIds = terminalNodeIdsForKind(result.rows, "service");
+        liveServices = servicePathsFromRows(result.rows);
+        const match = correlation.rows[0];
+        if (match) {
+          relatedRisk = {
+            maintainer: String(match.maintainer),
+            siblingPackage: String(match.sibling),
+            confidence: 94,
+          };
+        }
       } catch (error) {
         console.error("HydraDB scan failed; returning the deterministic demo snapshot", error);
       }
     }
 
-    let services = snapshotScan(packageId);
-    if (matchedIds) services = services.filter((service) => matchedIds.includes(service.id));
+    const services = liveServices ?? snapshotScan(packageId);
     const criticalServices = services.filter((service) => service.tier === "Tier 0").length;
 
     response.json({
@@ -95,11 +110,7 @@ export function createApp(hydra = new HydraClient()) {
         dependencyPaths: services.reduce((total, service) => total + service.hops, 0),
         exposedCredentials: 7,
       },
-      relatedRisk: {
-        maintainer: "release-bot-17",
-        siblingPackage: "@sc0pe/request@7.4.2",
-        confidence: 94,
-      },
+      relatedRisk,
     });
   });
 

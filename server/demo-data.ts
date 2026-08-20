@@ -65,3 +65,7 @@ export const blastRadiusCypher = `CALL algo.SSpaths({
 })
 YIELD path
 RETURN path`;
+
+export const correlationCypher = `MATCH (bad:Entity {id: $badId})<-[:MAINTAINS]-(m:Entity)-[:MAINTAINS]->(p:Entity)
+WHERE p.id <> $badId
+RETURN m.name AS maintainer, p.name AS sibling`;

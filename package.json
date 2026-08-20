@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "NODE_ENV=production tsx server/index.ts",
+    "setup:hydra": "node scripts/setup-local-hydra.mjs",
     "seed": "tsx server/seed-cli.ts"
   },
   "dependencies": {
