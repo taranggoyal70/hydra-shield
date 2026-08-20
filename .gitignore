@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.hydradb/
+hydradb-data/
+coverage/
+*.log
+.vercel
+.env*
