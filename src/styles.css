@@ -1604,3 +1604,275 @@ footer > span:last-child {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Midnight operations-room theme, informed by the Sentry DESIGN.md reference. */
+:root {
+  color: #f8f6ff;
+  background: #120d1d;
+  --ink: #f8f6ff;
+  --ink-soft: #d8d1e4;
+  --muted: #a59caf;
+  --paper: #1b1429;
+  --porcelain: #120d1d;
+  --line: #382d4d;
+  --line-dark: #4c3d67;
+  --risk: #ff6b6b;
+  --risk-deep: #ff9d91;
+  --cobalt: #c2ef4e;
+  --teal: #83e2cc;
+  --violet: #b9a4ff;
+  --shadow: 0 24px 70px rgba(5, 2, 12, 0.46);
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% 2%, rgba(111, 79, 168, 0.18), transparent 27%),
+    radial-gradient(circle at 92% 30%, rgba(194, 239, 78, 0.045), transparent 24%),
+    linear-gradient(rgba(185, 164, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(185, 164, 255, 0.025) 1px, transparent 1px),
+    #120d1d;
+  background-size: auto, auto, 44px 44px, 44px 44px, auto;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+  outline-color: rgba(194, 239, 78, 0.62);
+}
+
+.topbar {
+  border-bottom-color: rgba(76, 61, 103, 0.82);
+  background: rgba(18, 13, 29, 0.84);
+  box-shadow: 0 12px 34px rgba(5, 2, 12, 0.22);
+}
+
+.brand-mark,
+.topbar nav a.active::after {
+  color: var(--cobalt);
+  background-color: var(--cobalt);
+}
+
+.quiet-button {
+  border-color: var(--line-dark);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ink);
+}
+
+.quiet-button:hover {
+  border-color: rgba(194, 239, 78, 0.56);
+  background: rgba(194, 239, 78, 0.08);
+}
+
+.incident-strip {
+  border-color: rgba(255, 107, 107, 0.42);
+  background: linear-gradient(90deg, rgba(255, 107, 107, 0.11), rgba(255, 107, 107, 0.035));
+  color: #ffb5ad;
+  box-shadow: inset 3px 0 0 var(--risk);
+}
+
+.incident-strip p,
+.incident-strip button {
+  color: #d5cbdc;
+}
+
+.hero-head {
+  position: relative;
+}
+
+.hero-head::before {
+  position: absolute;
+  z-index: -1;
+  top: 14px;
+  left: -8vw;
+  width: 42vw;
+  height: 42vw;
+  border: 1px solid rgba(194, 239, 78, 0.055);
+  border-radius: 50%;
+  box-shadow: 0 0 0 55px rgba(194, 239, 78, 0.018), 0 0 0 110px rgba(185, 164, 255, 0.018);
+  content: "";
+}
+
+.hero-head h1 {
+  max-width: 900px;
+  text-wrap: balance;
+  text-shadow: 0 14px 45px rgba(0, 0, 0, 0.24);
+}
+
+.hero-head h1 em {
+  display: inline-block;
+  margin-top: 9px;
+  padding: 0.02em 0.15em 0.08em;
+  border-radius: 7px;
+  background: var(--cobalt);
+  color: #1b1429;
+  box-shadow: 0 12px 40px rgba(194, 239, 78, 0.13);
+  transform: rotate(-0.6deg);
+}
+
+.eyebrow {
+  color: var(--cobalt);
+}
+
+.incident-card,
+.metric-rail,
+.panel {
+  border-color: var(--line-dark);
+  background: rgba(31, 22, 51, 0.82);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.incident-card {
+  border-top-color: var(--risk);
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 107, 107, 0.12), transparent 42%),
+    rgba(31, 22, 51, 0.92);
+}
+
+.severity-pill {
+  color: #1b1429;
+}
+
+.metric-rail article,
+.panel-heading,
+.playbook-row,
+.evidence-links {
+  border-color: var(--line);
+}
+
+.metric-rail strong,
+.evaluation-metrics strong {
+  text-shadow: 0 0 30px rgba(194, 239, 78, 0.09);
+}
+
+.metric-rail .risk-metric strong {
+  color: var(--cobalt);
+}
+
+.advisory-panel {
+  border-top-color: var(--cobalt);
+  background:
+    radial-gradient(circle at 8% 110%, rgba(194, 239, 78, 0.07), transparent 34%),
+    rgba(31, 22, 51, 0.88);
+}
+
+.evaluation-panel,
+.query-panel {
+  background:
+    radial-gradient(circle at 100% 0, rgba(131, 226, 204, 0.09), transparent 43%),
+    rgba(31, 22, 51, 0.88);
+}
+
+.advisory-range,
+.graph-legend,
+.icon-button {
+  border-color: var(--line-dark);
+  background: rgba(18, 13, 29, 0.72);
+}
+
+.primary-button {
+  background: var(--cobalt);
+  color: #1b1429;
+  box-shadow: 0 10px 28px rgba(194, 239, 78, 0.16);
+}
+
+.primary-button:hover:not(:disabled) {
+  box-shadow: 0 14px 36px rgba(194, 239, 78, 0.24);
+}
+
+.graph-panel {
+  box-shadow: 0 0 0 1px rgba(194, 239, 78, 0.05), 0 28px 90px rgba(5, 2, 12, 0.55);
+}
+
+.graph-stage {
+  background:
+    radial-gradient(circle at 68% 36%, rgba(255, 107, 107, 0.13), transparent 22%),
+    radial-gradient(circle at 34% 54%, rgba(194, 239, 78, 0.045), transparent 34%),
+    linear-gradient(rgba(185, 164, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(185, 164, 255, 0.05) 1px, transparent 1px),
+    #171021;
+  background-size: auto, auto, 32px 32px, 32px 32px, auto;
+}
+
+.graph-edge {
+  stroke: #574a6c;
+}
+
+#arrow-safe path {
+  fill: #625473;
+}
+
+.node-ring {
+  fill: rgba(23, 16, 33, 0.96);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.34));
+}
+
+.node-label {
+  fill: var(--ink-soft);
+}
+
+.node-meta,
+.graph-caption,
+.graph-legend span {
+  color: var(--muted);
+  fill: var(--muted);
+}
+
+.service-row,
+.correlation-card {
+  background: rgba(18, 13, 29, 0.34);
+}
+
+.service-row:hover,
+.playbook-row:hover {
+  background: rgba(194, 239, 78, 0.045);
+}
+
+.step-number {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.playbook-row.done .step-number {
+  color: #1b1429;
+}
+
+.timeline li::before {
+  border-color: var(--paper);
+}
+
+.code-window {
+  border-color: #4c3d67;
+  background: #0d0914;
+  box-shadow: 0 28px 70px rgba(5, 2, 12, 0.52);
+}
+
+.code-titlebar {
+  background: #171021;
+}
+
+.code-titlebar b {
+  background: rgba(194, 239, 78, 0.12);
+  color: var(--cobalt);
+}
+
+.dialog-backdrop {
+  background: rgba(6, 3, 11, 0.78);
+}
+
+.dialog {
+  border-color: var(--line-dark);
+  background: #1f1633;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.62);
+}
+
+.dialog input,
+.file-drop {
+  border-color: var(--line-dark);
+  background: rgba(18, 13, 29, 0.66);
+  color: var(--ink);
+}
+
+footer {
+  border-color: var(--line);
+}
