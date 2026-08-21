@@ -38,33 +38,63 @@ The core result is not a keyword match. HydraDB performs the reverse, multi-hop 
 
 ## Three-minute demo script
 
-### 0:00-0:25 - The problem
+Speak calmly and treat this as a product walkthrough, not a memorized pitch. The words in bold brackets are actions, not narration.
 
-“An advisory tells security which package is vulnerable. It does not tell responders which production services actually resolve that exact version, how the dependency reached them, or what to contain first.”
+### 0:00-0:25 - Introduction
 
-### 0:25-0:50 - Real evidence
+**[Start at the top of the page.]**
 
-Open HydraShield. Point out the live OSV source, GitHub-reviewed GHSA, CVE alias, affected range and fixed version. Explain that the public advisory is real while the enterprise estate is intentionally simulated.
+“Hi, I’m Tarang, and this is HydraShield.
 
-### 0:50-1:35 - HydraDB blast radius
+When a vulnerability is published, teams learn which package is affected. They still need to know which services use that exact version, how it reached them, and what to fix first. HydraShield answers that as an explainable dependency graph.”
 
-Run the impact scan. Show the five affected services and expand the exact paths. Point to direct and three-hop transitive exposure. Highlight that the query runs as one bounded reverse traversal, not a fuzzy search.
+### 0:25-0:48 - Real vulnerability evidence
 
-### 1:35-2:00 - Graph-native enrichment
+**[Scroll to the advisory evidence.]**
 
-Show `AFFECTED_BY`, `MAINTAINS` and `SIMILAR_TO` relationships. Open the one-edit `senver` candidate to demonstrate how the same graph expands from vulnerability response into supply-chain investigation.
+“This is a real GitHub-reviewed advisory, also known as CVE-2022-25883. The evidence comes from OSV, including the affected range and first fixed version. The company dependency estate is simulated, but the vulnerability evidence is real.”
 
-### 2:00-2:25 - Ingestion and evaluation
+### 0:48-1:28 - Find the blast radius
 
-Import a small `package-lock.json` containing `semver@7.3.7`. Show the exact OSV match linked to the graph. Point to precision, recall, F1 and p95, then open the raw evaluation endpoint.
+**[Scroll to the graph and click Run impact scan.]**
 
-### 2:25-2:50 - Response
+“Now I’ll run the impact scan.
 
-Use the generated plan: freeze only affected deploys, pin 7.5.2, re-resolve lockfiles and promote patched artifacts. Export the incident brief.
+HydraDB starts at the vulnerable package and follows dependencies backwards. One bounded traversal finds five affected services, including three customer-critical Tier 0 services.
 
-### 2:50-3:00 - Close
+This is more than a list. Each service includes the exact exposure path. Checkout reaches the package in two hops, while Identity reaches it through a three-hop transitive chain. That path is the proof a responder needs before stopping a deployment.”
 
-“HydraShield turns public advisory evidence into an exact containment decision. HydraDB is what makes every answer fast, transitive and explainable.”
+### 1:28-1:50 - Investigate a related threat
+
+**[Click Inspect typosquat candidate.]**
+
+“The graph also finds related supply-chain signals. Here, `senver` is only one edit away from `semver`. Inspecting it focuses the suspicious node and shows the relationship without losing the original incident context.”
+
+### 1:50-2:15 - Import a real lockfile
+
+**[Click Import lockfile. Enter `payments-api`, choose `demo/vulnerable-package-lock.json`, and click Build dependency graph.]**
+
+“HydraShield can also ingest a normal npm package-lock file. I’ll import this service as payments-api. Resolved packages become versioned graph nodes, dependency links are preserved, and the exact vulnerable version connects to the OSV advisory. There is no separate inventory to maintain by hand.”
+
+### 2:15-2:38 - Prove correctness and performance
+
+**[Close the dialog and point to the evaluation card, then the query result.]**
+
+“The result is measurable, not just visually convincing. The regression covers transitive dependencies, version isolation, cycles, and depth limits, and reports precision, recall, F1, and p95 latency.
+
+In local mode this scan runs against HydraDB, and the read epoch proves it came from a causally consistent graph read.”
+
+### 2:38-2:55 - Turn evidence into action
+
+**[Scroll to the containment plan and mark the first item complete.]**
+
+“Finally, HydraShield turns the result into an action plan: freeze only affected deployments, pin the fixed version, re-resolve the lockfiles, and promote patched services. The incident brief can also be exported for the response team.”
+
+### 2:55-3:00 - Close
+
+**[Return briefly to the graph.]**
+
+“HydraShield turns a public advisory into an exact containment decision. HydraDB makes that decision fast, transitive, and explainable.”
 
 ## Required capture checklist
 

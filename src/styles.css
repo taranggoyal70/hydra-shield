@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Sora:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap");
 
 :root {
   font-family: "Instrument Sans", system-ui, sans-serif;
@@ -1605,6 +1605,406 @@ footer > span:last-child {
   }
 }
 
+/* Carbon field console - IBM-inspired, restrained, flat and evidence-first. */
+:root {
+  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  color: #161616;
+  background: #f4f4f4;
+  --ink: #161616;
+  --ink-soft: #393939;
+  --muted: #525252;
+  --paper: #ffffff;
+  --porcelain: #f4f4f4;
+  --line: #e0e0e0;
+  --line-dark: #c6c6c6;
+  --risk: #da1e28;
+  --risk-deep: #a2191f;
+  --cobalt: #0f62fe;
+  --teal: #007d79;
+  --violet: #6929c4;
+  --shadow: none;
+}
+
+body {
+  background: #f4f4f4;
+  letter-spacing: 0.16px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 2px;
+}
+
+button,
+.panel,
+.incident-strip,
+.incident-card,
+.metric-rail,
+.graph-legend,
+.advisory-range,
+.code-window,
+.dialog,
+.file-drop,
+.graph-inspector {
+  border-radius: 0;
+}
+
+.topbar {
+  min-height: 64px;
+  border-bottom: 1px solid var(--line-dark);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.brand {
+  color: var(--ink);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--cobalt);
+  color: white;
+}
+
+.brand-mark svg:last-child {
+  color: white;
+}
+
+.topbar nav a {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.topbar nav a:hover,
+.topbar nav a.active {
+  background: #f4f4f4;
+  color: var(--ink);
+}
+
+.topbar nav a.active::after {
+  width: 100%;
+  height: 2px;
+  background: var(--cobalt);
+}
+
+.engine-status.live i {
+  background: #24a148;
+  box-shadow: none;
+}
+
+.quiet-button {
+  min-height: 40px;
+  border: 1px solid var(--cobalt);
+  background: white;
+  color: var(--cobalt);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quiet-button:hover {
+  border-color: #0043ce;
+  background: #edf5ff;
+}
+
+.incident-strip {
+  border: 1px solid var(--line-dark);
+  border-left: 4px solid var(--risk);
+  background: white;
+  color: var(--risk-deep);
+  box-shadow: none;
+}
+
+.incident-strip p {
+  color: var(--ink-soft);
+}
+
+.incident-strip button {
+  color: var(--cobalt);
+}
+
+.hero-head {
+  align-items: center;
+  padding-top: 72px;
+}
+
+.hero-head::before {
+  display: none;
+}
+
+.hero-head h1 {
+  color: var(--ink);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: clamp(52px, 5.7vw, 82px);
+  font-weight: 300;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-shadow: none;
+}
+
+.hero-head h1 em {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border-bottom: 6px solid var(--cobalt);
+  border-radius: 0;
+  background: transparent;
+  color: var(--cobalt);
+  box-shadow: none;
+  transform: none;
+}
+
+.eyebrow {
+  color: var(--cobalt);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.16px;
+  text-transform: none;
+}
+
+.incident-card,
+.metric-rail,
+.panel {
+  border-color: var(--line-dark);
+  background: white;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.incident-card {
+  border-top: 4px solid var(--risk);
+  background: white;
+}
+
+.severity-pill {
+  border-radius: 0;
+  background: var(--risk);
+  color: white;
+}
+
+.metric-rail article,
+.panel-heading,
+.playbook-row,
+.evidence-links {
+  border-color: var(--line);
+}
+
+.metric-rail article {
+  background: white;
+}
+
+.metric-rail span,
+.metric-rail small,
+.evaluation-metrics small {
+  letter-spacing: 0.16px;
+  text-transform: none;
+}
+
+.metric-rail strong,
+.evaluation-metrics strong {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-weight: 300;
+  text-shadow: none;
+}
+
+.metric-rail .risk-metric strong {
+  color: var(--cobalt);
+}
+
+.advisory-panel {
+  border-top: 4px solid var(--cobalt);
+  background: white;
+}
+
+.evaluation-panel,
+.query-panel {
+  background: white;
+}
+
+.advisory-copy h2,
+.panel-heading h2,
+.query-copy h2 {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-weight: 400;
+}
+
+.advisory-range,
+.graph-legend,
+.icon-button {
+  border-color: var(--line-dark);
+  background: white;
+}
+
+.primary-button {
+  min-height: 40px;
+  border-radius: 0;
+  background: var(--cobalt);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #0050e6;
+  box-shadow: none;
+  transform: none;
+}
+
+.graph-panel {
+  box-shadow: none;
+}
+
+.graph-stage {
+  background:
+    linear-gradient(rgba(15, 98, 254, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 98, 254, 0.065) 1px, transparent 1px),
+    #f8fbff;
+  background-size: 32px 32px;
+}
+
+.graph-edge {
+  stroke: #8d8d8d;
+}
+
+#arrow-safe path {
+  fill: #8d8d8d;
+}
+
+.node-ring {
+  fill: white;
+  filter: none;
+}
+
+.node-label {
+  fill: var(--ink-soft);
+}
+
+.node-meta,
+.graph-caption,
+.graph-legend span {
+  color: var(--muted);
+  fill: var(--muted);
+}
+
+.graph-node.selected .node-ring {
+  stroke: var(--cobalt);
+  filter: none;
+}
+
+.graph-inspector {
+  border: 1px solid var(--line-dark);
+  border-left: 4px solid var(--cobalt);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.graph-inspector-head,
+.graph-inspector > strong {
+  color: var(--ink);
+}
+
+.graph-inspector-head span {
+  color: var(--cobalt);
+}
+
+.service-row,
+.correlation-card {
+  background: #f4f4f4;
+}
+
+.service-row:hover,
+.playbook-row:hover {
+  background: #edf5ff;
+}
+
+.count-badge,
+.step-number {
+  border-radius: 0;
+  background: #e0e0e0;
+}
+
+.playbook-row.done .step-number {
+  background: var(--cobalt);
+  color: white;
+}
+
+.timeline li::before {
+  border-color: white;
+}
+
+.query-panel {
+  border-color: #161616;
+  background: #161616;
+  color: white;
+}
+
+.query-panel .eyebrow,
+.query-facts span {
+  color: #78a9ff;
+}
+
+.query-copy h2,
+.query-copy > p {
+  color: white;
+}
+
+.code-window {
+  border-color: #525252;
+  background: #262626;
+  box-shadow: none;
+}
+
+.code-titlebar {
+  background: #393939;
+}
+
+.code-titlebar b {
+  border-radius: 0;
+  background: var(--cobalt);
+  color: white;
+}
+
+.dialog-backdrop {
+  background: rgba(22, 22, 22, 0.58);
+}
+
+.dialog {
+  border-color: var(--line-dark);
+  background: white;
+  box-shadow: none;
+}
+
+.dialog input,
+.file-drop {
+  border-color: var(--line-dark);
+  border-bottom: 2px solid var(--ink);
+  background: #f4f4f4;
+  color: var(--ink);
+}
+
+footer {
+  border-color: #393939;
+  background: #161616;
+  color: #c6c6c6;
+}
+
+footer .brand,
+footer .brand-mark {
+  color: white;
+}
+
 /* Midnight operations-room theme, informed by the Sentry DESIGN.md reference. */
 :root {
   color: #f8f6ff;
@@ -1961,4 +2361,288 @@ footer {
   .graph-inspector > div:last-child {
     display: none;
   }
+}
+
+/* Final Carbon cascade: intentionally follows the retired midnight theme. */
+:root {
+  color: #161616;
+  background: #f4f4f4;
+  --ink: #161616;
+  --ink-soft: #393939;
+  --muted: #525252;
+  --paper: #ffffff;
+  --porcelain: #f4f4f4;
+  --line: #e0e0e0;
+  --line-dark: #c6c6c6;
+  --risk: #da1e28;
+  --risk-deep: #a2191f;
+  --cobalt: #0f62fe;
+  --teal: #007d79;
+  --violet: #6929c4;
+  --shadow: none;
+}
+
+body {
+  background: #f4f4f4;
+}
+
+.topbar {
+  border-bottom-color: var(--line-dark);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.brand-mark {
+  background: var(--cobalt);
+  color: white;
+}
+
+.brand-mark svg:last-child {
+  color: white;
+}
+
+.topbar nav a.active::after {
+  background: var(--cobalt);
+}
+
+.quiet-button {
+  border-color: var(--cobalt);
+  background: white;
+  color: var(--cobalt);
+}
+
+.quiet-button:hover {
+  border-color: #0043ce;
+  background: #edf5ff;
+}
+
+.incident-strip {
+  border-color: var(--line-dark);
+  border-left-color: var(--risk);
+  background: white;
+  color: var(--risk-deep);
+  box-shadow: none;
+}
+
+.incident-strip p {
+  color: var(--ink-soft);
+}
+
+.incident-strip button {
+  color: var(--cobalt);
+}
+
+.hero-head::before {
+  display: none;
+}
+
+.hero-head h1 {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.hero-head h1 em {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border-bottom: 6px solid var(--cobalt);
+  border-radius: 0;
+  background: transparent;
+  color: var(--cobalt);
+  box-shadow: none;
+  transform: none;
+}
+
+.incident-card,
+.metric-rail,
+.panel {
+  border-color: var(--line-dark);
+  background: white;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.incident-card {
+  border-top-color: var(--risk);
+  background: white;
+}
+
+.severity-pill {
+  color: white;
+}
+
+.metric-rail article,
+.panel-heading,
+.playbook-row,
+.evidence-links {
+  border-color: var(--line);
+}
+
+.metric-rail strong,
+.evaluation-metrics strong {
+  text-shadow: none;
+}
+
+.metric-rail .risk-metric strong {
+  color: var(--cobalt);
+}
+
+.advisory-panel {
+  border-top-color: var(--cobalt);
+  background: white;
+}
+
+.evaluation-panel {
+  background: white;
+}
+
+.advisory-range,
+.graph-legend,
+.icon-button {
+  border-color: var(--line-dark);
+  background: white;
+}
+
+.primary-button {
+  background: var(--cobalt);
+  color: white;
+  box-shadow: none;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #0050e6;
+  box-shadow: none;
+  transform: none;
+}
+
+.graph-panel {
+  box-shadow: none;
+}
+
+.graph-stage {
+  background:
+    linear-gradient(rgba(15, 98, 254, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 98, 254, 0.065) 1px, transparent 1px),
+    #f8fbff;
+  background-size: 32px 32px;
+}
+
+.graph-edge {
+  stroke: #8d8d8d;
+}
+
+#arrow-safe path {
+  fill: #8d8d8d;
+}
+
+.node-ring {
+  fill: white;
+  filter: none;
+}
+
+.node-label {
+  fill: var(--ink-soft);
+}
+
+.node-meta,
+.graph-caption,
+.graph-legend span {
+  color: var(--muted);
+  fill: var(--muted);
+}
+
+.service-row,
+.correlation-card {
+  background: #f4f4f4;
+}
+
+.service-row:hover,
+.playbook-row:hover {
+  background: #edf5ff;
+}
+
+.step-number {
+  background: #e0e0e0;
+}
+
+.playbook-row.done .step-number {
+  background: var(--cobalt);
+  color: white;
+}
+
+.query-panel {
+  border-color: #161616;
+  background: #161616;
+  color: white;
+}
+
+.query-panel .eyebrow,
+.query-facts span {
+  color: #78a9ff;
+}
+
+.query-copy h2,
+.query-copy > p {
+  color: white;
+}
+
+.code-window {
+  border-color: #525252;
+  background: #262626;
+  box-shadow: none;
+}
+
+.code-titlebar {
+  background: #393939;
+}
+
+.code-titlebar b {
+  background: var(--cobalt);
+  color: white;
+}
+
+.dialog-backdrop {
+  background: rgba(22, 22, 22, 0.58);
+}
+
+.dialog {
+  border-color: var(--line-dark);
+  background: white;
+  box-shadow: none;
+}
+
+.dialog input,
+.file-drop {
+  border-color: var(--line-dark);
+  background: #f4f4f4;
+  color: var(--ink);
+}
+
+.graph-inspector {
+  border-color: var(--line-dark);
+  border-left-color: var(--cobalt);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.graph-inspector-head,
+.graph-inspector > strong {
+  color: var(--ink);
+}
+
+.graph-inspector-head span {
+  color: var(--cobalt);
+}
+
+.graph-node.selected .node-ring {
+  stroke: var(--cobalt);
+  filter: none;
+}
+
+footer {
+  border-color: #393939;
+  background: #161616;
+  color: #c6c6c6;
 }
