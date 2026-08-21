@@ -9,6 +9,7 @@ import {
   CircleDot,
   Clock3,
   Code2,
+  Crosshair,
   Download,
   ExternalLink,
   FileJson,
@@ -19,7 +20,6 @@ import {
   Network,
   Play,
   RefreshCw,
-  Search,
   ShieldCheck,
   ShieldAlert,
   Sparkles,
@@ -155,16 +155,26 @@ function GraphMap({
   graph,
   scan,
   scanning,
+  selected,
+  onSelect,
 }: {
   graph: AppState["graph"];
   scan: ScanResult | null;
   scanning: boolean;
+  selected: number;
+  onSelect: (nodeId: number) => void;
 }) {
-  const [selected, setSelected] = useState<number | null>(101);
   const nodeById = useMemo(() => new Map(graph.nodes.map((node) => [node.id, node])), [graph.nodes]);
   const affectedNames = useMemo(
     () => new Set(scan?.services.flatMap((service) => service.path) ?? []),
     [scan],
+  );
+  const selectedNode = nodeById.get(selected);
+  const selectedRelations = useMemo(
+    () => Array.from(new Set(graph.edges
+      .filter((edge) => edge.source === selected || edge.target === selected)
+      .map((edge) => edge.type.replaceAll("_", " ")))),
+    [graph.edges, selected],
   );
 
   return (
@@ -175,7 +185,7 @@ function GraphMap({
           <span><i className="legend-dot package" /> Package</span>
           <span><i className="legend-dot risk" /> Active risk</span>
         </div>
-        <button className="icon-button" aria-label="Center graph"><Search size={15} /></button>
+        <button className="icon-button" aria-label="Focus compromised package" title="Focus compromised package" onClick={() => onSelect(101)}><Crosshair size={15} /></button>
       </div>
 
       <svg className="network-map" viewBox="0 0 1000 900" role="img" aria-label="Dependency graph showing affected services">
@@ -227,8 +237,13 @@ function GraphMap({
                 role="button"
                 tabIndex={0}
                 aria-label={`${node.kind}: ${node.name}`}
-                onClick={() => setSelected(node.id)}
-                onKeyDown={(event) => event.key === "Enter" && setSelected(node.id)}
+                onClick={() => onSelect(node.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect(node.id);
+                  }
+                }}
               >
                 {compromised && <circle className="node-pulse" r="43" />}
                 <circle className="node-ring" r={node.kind === "service" ? 24 : 20} />
@@ -241,6 +256,20 @@ function GraphMap({
           })}
         </g>
       </svg>
+
+      {selectedNode && (
+        <aside className="graph-inspector" aria-live="polite">
+          <div className="graph-inspector-head">
+            <span>{selectedNode.kind}</span>
+            <small>node {String(selectedNode.id).padStart(3, "0")}</small>
+          </div>
+          <strong>{selectedNode.name}</strong>
+          <p>{selectedNode.description ?? [selectedNode.owner, selectedNode.tier, selectedNode.status].filter(Boolean).join(" · ")}</p>
+          <div>
+            {selectedRelations.map((relation) => <code key={relation}>{relation}</code>)}
+          </div>
+        </aside>
+      )}
 
       <div className="graph-caption">
         <span><Network size={14} /> {graph.nodes.length} entities · {graph.edges.length} relationships</span>
@@ -312,6 +341,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [selectedNode, setSelectedNode] = useState(101);
   const graphRef = useRef<HTMLDivElement>(null);
 
   const runScan = useCallback(async () => {
@@ -476,7 +506,7 @@ export default function App() {
                 {scanning ? "Traversing…" : "Run impact scan"}
               </button>
             </div>
-            <GraphMap graph={state.graph} scan={scan} scanning={scanning} />
+            <GraphMap graph={state.graph} scan={scan} scanning={scanning} selected={selectedNode} onSelect={setSelectedNode} />
           </div>
 
           <aside className="panel impact-panel">
@@ -507,7 +537,10 @@ export default function App() {
             <div className="correlation-card">
               <div><Fingerprint size={18} /><span><small>Identity correlation</small><strong>Shared publisher detected</strong></span></div>
               <p><code>{scan?.relatedRisk.siblingPackage}</code> is one edit from the affected package name. Signal: <code>{scan?.relatedRisk.signal}</code>.</p>
-              <button>Inspect typosquat candidate <ArrowRight size={13} /></button>
+              <button onClick={() => {
+                setSelectedNode(108);
+                graphRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}>Inspect typosquat candidate <ArrowRight size={13} /></button>
             </div>
           </aside>
         </section>
