@@ -24,6 +24,11 @@ interface OsvResponse {
   vulns?: OsvVulnerability[];
 }
 
+export interface AdvisoryRange {
+  introduced: string;
+  fixed: string;
+}
+
 export interface AdvisoryEvidence {
   id: string;
   aliases: string[];
@@ -33,6 +38,7 @@ export interface AdvisoryEvidence {
   severity: string;
   introduced: string;
   fixed: string;
+  ranges: AdvisoryRange[];
   source: AdvisorySource;
   sourceLabel: string;
   references: string[];
@@ -55,10 +61,35 @@ function packageCoordinates(displayName: string) {
   return { name: displayName.slice(0, separator), version: displayName.slice(separator + 1) };
 }
 
-function isAffectedVersion(version: string, evidence: AdvisoryEvidence): boolean {
-  return evidence.introduced !== "unknown"
-    && compareVersions(version, evidence.introduced) >= 0
-    && (evidence.fixed === "not published" || compareVersions(version, evidence.fixed) < 0);
+function isVersionInRange(version: string, range: AdvisoryRange): boolean {
+  return range.introduced !== "unknown"
+    && compareVersions(version, range.introduced) >= 0
+    && (range.fixed === "not published" || compareVersions(version, range.fixed) < 0);
+}
+
+function affectedRanges(
+  affectedEntries: OsvVulnerability["affected"],
+  requestedPackage: string,
+): AdvisoryRange[] {
+  return affectedEntries
+    ?.filter((entry) => entry.package?.ecosystem?.toLowerCase() === "npm" && entry.package.name === requestedPackage)
+    .flatMap((entry) => entry.ranges ?? [])
+    .filter((range) => range.type?.toUpperCase() === "SEMVER")
+    .flatMap((range) => {
+      const intervals: AdvisoryRange[] = [];
+      let introduced = "unknown";
+
+      for (const event of range.events ?? []) {
+        if (event.introduced) introduced = event.introduced;
+        if (event.fixed) {
+          intervals.push({ introduced, fixed: event.fixed });
+          introduced = "unknown";
+        }
+      }
+
+      if (introduced !== "unknown") intervals.push({ introduced, fixed: "not published" });
+      return intervals;
+    }) ?? [];
 }
 
 export function attachAdvisoryEvidence(graph: LockfileGraph, evidence: AdvisoryEvidence) {
@@ -66,7 +97,8 @@ export function attachAdvisoryEvidence(graph: LockfileGraph, evidence: AdvisoryE
     .filter((node) => {
       if (node.kind !== "package") return false;
       const coordinates = packageCoordinates(node.name);
-      return coordinates?.name === evidence.package && isAffectedVersion(coordinates.version, evidence);
+      return coordinates?.name === evidence.package
+        && evidence.ranges.some((range) => isVersionInRange(coordinates.version, range));
     })
     .map((node) => node.id);
   if (matches.length === 0) return { graph, matches };
@@ -109,7 +141,11 @@ const bundledResponse: OsvResponse = {
       affected: [
         {
           package: { ecosystem: "npm", name: featuredAdvisory.package },
-          ranges: [{ type: "SEMVER", events: [{ introduced: featuredAdvisory.introduced }, { fixed: featuredAdvisory.fixed }] }],
+          ranges: [
+            { type: "SEMVER", events: [{ introduced: "7.0.0" }, { fixed: "7.5.2" }] },
+            { type: "SEMVER", events: [{ introduced: "6.0.0" }, { fixed: "6.3.1" }] },
+            { type: "SEMVER", events: [{ introduced: "2.0.0-alpha" }, { fixed: "5.7.2" }] },
+          ],
         },
       ],
       references: [
@@ -129,12 +165,10 @@ export function normalizeOsvResponse(
   const vulnerability = payload.vulns?.[0];
   if (!vulnerability?.id) throw new Error("No OSV advisory found for this package version.");
 
-  const affected = vulnerability.affected?.find(
-    (entry) => entry.package?.ecosystem?.toLowerCase() === "npm" && entry.package.name === requestedPackage,
-  );
-  const events = affected?.ranges?.find((range) => range.type === "SEMVER")?.events ?? [];
-  const introduced = events.find((event) => event.introduced)?.introduced ?? "unknown";
-  const fixed = [...events].reverse().find((event) => event.fixed)?.fixed ?? "not published";
+  const ranges = affectedRanges(vulnerability.affected, requestedPackage);
+  const primaryRange = ranges.find((range) => isVersionInRange(requestedVersion, range)) ?? ranges[0];
+  const introduced = primaryRange?.introduced ?? "unknown";
+  const fixed = primaryRange?.fixed ?? "not published";
   const references = [...new Set([
     `https://osv.dev/vulnerability/${vulnerability.id}`,
     ...(vulnerability.id.startsWith("GHSA-") ? [`https://github.com/advisories/${vulnerability.id}`] : []),
@@ -150,6 +184,7 @@ export function normalizeOsvResponse(
     severity: vulnerability.database_specific?.severity ?? "UNKNOWN",
     introduced,
     fixed,
+    ranges,
     source,
     sourceLabel: source === "osv-live" ? "OSV.dev live API" : "Bundled OSV snapshot",
     references,
