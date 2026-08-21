@@ -1,3 +1,6 @@
+import { stableId, type LockfileGraph } from "./domain.js";
+import { featuredAdvisory } from "./featured-advisory.js";
+
 export type AdvisorySource = "osv-live" | "bundled-osv";
 
 interface OsvEvent {
@@ -36,9 +39,35 @@ export interface AdvisoryEvidence {
   fetchedAt: string;
 }
 
+function compareVersions(left: string, right: string): number {
+  const leftParts = left.split("-")[0].split(".").map(Number);
+  const rightParts = right.split("-")[0].split(".").map(Number);
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+function packageCoordinates(displayName: string) {
+  const separator = displayName.lastIndexOf("@");
+  if (separator <= 0) return undefined;
+  return { name: displayName.slice(0, separator), version: displayName.slice(separator + 1) };
+}
+
+function isAffectedVersion(version: string, evidence: AdvisoryEvidence): boolean {
+  return evidence.introduced !== "unknown"
+    && compareVersions(version, evidence.introduced) >= 0
+    && (evidence.fixed === "not published" || compareVersions(version, evidence.fixed) < 0);
+}
+
 export function attachAdvisoryEvidence(graph: LockfileGraph, evidence: AdvisoryEvidence) {
   const matches = graph.nodes
-    .filter((node) => node.kind === "package" && node.name === `${evidence.package}@${evidence.version}`)
+    .filter((node) => {
+      if (node.kind !== "package") return false;
+      const coordinates = packageCoordinates(node.name);
+      return coordinates?.name === evidence.package && isAffectedVersion(coordinates.version, evidence);
+    })
     .map((node) => node.id);
   if (matches.length === 0) return { graph, matches };
 
@@ -62,7 +91,7 @@ export function attachAdvisoryEvidence(graph: LockfileGraph, evidence: AdvisoryE
           source,
           target: vulnerabilityId,
           type: "AFFECTED_BY" as const,
-          version: evidence.version,
+          version: graph.nodes.find((node) => node.id === source)?.name.split("@").at(-1) ?? evidence.version,
         })),
       ],
     },
@@ -70,25 +99,22 @@ export function attachAdvisoryEvidence(graph: LockfileGraph, evidence: AdvisoryE
   };
 }
 
-const packageName = "semver";
-const packageVersion = "7.3.7";
-
 const bundledResponse: OsvResponse = {
   vulns: [
     {
-      id: "GHSA-c2qf-rxjj-qqgw",
-      aliases: ["CVE-2022-25883"],
-      summary: "semver vulnerable to Regular Expression Denial of Service",
-      database_specific: { severity: "HIGH" },
+      id: featuredAdvisory.id,
+      aliases: [featuredAdvisory.alias],
+      summary: featuredAdvisory.summary,
+      database_specific: { severity: featuredAdvisory.severity },
       affected: [
         {
-          package: { ecosystem: "npm", name: packageName },
-          ranges: [{ type: "SEMVER", events: [{ introduced: "7.0.0" }, { fixed: "7.5.2" }] }],
+          package: { ecosystem: "npm", name: featuredAdvisory.package },
+          ranges: [{ type: "SEMVER", events: [{ introduced: featuredAdvisory.introduced }, { fixed: featuredAdvisory.fixed }] }],
         },
       ],
       references: [
-        { type: "ADVISORY", url: "https://github.com/advisories/GHSA-c2qf-rxjj-qqgw" },
-        { type: "WEB", url: "https://osv.dev/vulnerability/GHSA-c2qf-rxjj-qqgw" },
+        { type: "ADVISORY", url: `https://github.com/advisories/${featuredAdvisory.id}` },
+        { type: "WEB", url: `https://osv.dev/vulnerability/${featuredAdvisory.id}` },
       ],
     },
   ],
@@ -111,6 +137,7 @@ export function normalizeOsvResponse(
   const fixed = [...events].reverse().find((event) => event.fixed)?.fixed ?? "not published";
   const references = [...new Set([
     `https://osv.dev/vulnerability/${vulnerability.id}`,
+    ...(vulnerability.id.startsWith("GHSA-") ? [`https://github.com/advisories/${vulnerability.id}`] : []),
     ...(vulnerability.references?.flatMap((reference) => reference.url ? [reference.url] : []) ?? []),
   ])];
 
@@ -134,15 +161,14 @@ let cachedEvidence: Promise<AdvisoryEvidence> | undefined;
 
 export function getAdvisoryEvidence(): Promise<AdvisoryEvidence> {
   if (!cachedEvidence) {
-    cachedEvidence = fetch("https://api.osv.dev/v1/vulns/GHSA-c2qf-rxjj-qqgw", {
+    cachedEvidence = fetch(`https://api.osv.dev/v1/vulns/${featuredAdvisory.id}`, {
       signal: AbortSignal.timeout(2_500),
     })
       .then(async (response) => {
         if (!response.ok) throw new Error(`OSV returned ${response.status}`);
-        return normalizeOsvResponse({ vulns: [await response.json() as OsvVulnerability] }, packageName, packageVersion, "osv-live");
+        return normalizeOsvResponse({ vulns: [await response.json() as OsvVulnerability] }, featuredAdvisory.package, featuredAdvisory.version, "osv-live");
       })
-      .catch(() => normalizeOsvResponse(bundledResponse, packageName, packageVersion, "bundled-osv"));
+      .catch(() => normalizeOsvResponse(bundledResponse, featuredAdvisory.package, featuredAdvisory.version, "bundled-osv"));
   }
   return cachedEvidence;
 }
-import { stableId, type LockfileGraph } from "./domain.js";

@@ -452,14 +452,14 @@ export default function App() {
           </article>
 
           <aside className="panel evaluation-panel">
-            <div className="evaluation-heading"><Gauge size={18} /><span><small>Regression corpus</small><strong>Measured, not claimed</strong></span></div>
+            <div className="evaluation-heading"><Gauge size={18} /><span><small>Reference regression</small><strong>Deterministic baseline</strong></span></div>
             <div className="evaluation-metrics">
               <span><small>Precision</small><strong>{Math.round(state.evaluation.precision * 100)}%</strong></span>
               <span><small>Recall</small><strong>{Math.round(state.evaluation.recall * 100)}%</strong></span>
               <span><small>F1</small><strong>{state.evaluation.f1.toFixed(2)}</strong></span>
-              <span><small>p95</small><strong>{state.evaluation.p95Ms}ms</strong></span>
+              <span><small>Ref p95</small><strong>{state.evaluation.p95Ms}ms</strong></span>
             </div>
-            <p>{state.evaluation.corpus}. {state.evaluation.iterations} timed runs.</p>
+            <p>{state.evaluation.corpus}. {state.evaluation.iterations} timed reference runs. Live HydraDB latency appears in the scan metrics when connected.</p>
             <a href="/api/evaluation" target="_blank" rel="noreferrer">Inspect raw evaluation <ExternalLink size={11} /></a>
           </aside>
         </section>

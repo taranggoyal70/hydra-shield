@@ -1,4 +1,5 @@
 import type { GraphEdge, GraphNode } from "./domain.js";
+import { featuredAdvisory } from "./featured-advisory.js";
 
 export const demoNodes: GraphNode[] = [
   { id: 1, kind: "service", name: "checkout-api", owner: "Commerce", tier: "Tier 0", x: 76, y: 108 },
@@ -7,7 +8,7 @@ export const demoNodes: GraphNode[] = [
   { id: 4, kind: "service", name: "event-relay", owner: "Platform", tier: "Tier 1", x: 162, y: 546 },
   { id: 5, kind: "service", name: "billing-worker", owner: "Revenue", tier: "Tier 0", x: 84, y: 675 },
   { id: 6, kind: "service", name: "docs-site", owner: "DX", tier: "Tier 2", x: 190, y: 790 },
-  { id: 101, kind: "package", name: "semver@7.3.7", status: "compromised", severity: "high", x: 682, y: 326 },
+  { id: 101, kind: "package", name: `${featuredAdvisory.package}@${featuredAdvisory.version}`, status: "compromised", severity: featuredAdvisory.severity.toLowerCase(), x: 682, y: 326 },
   { id: 102, kind: "package", name: "@northstar/release-orchestrator@4.8.1", status: "affected", x: 465, y: 172 },
   { id: 103, kind: "package", name: "@northstar/config-kit@2.6.0", status: "affected", x: 472, y: 430 },
   { id: 104, kind: "package", name: "express@5.1.0", status: "clean", x: 392, y: 676 },
@@ -18,7 +19,7 @@ export const demoNodes: GraphNode[] = [
   { id: 109, kind: "package", name: "stripe@18.4.0", status: "clean", x: 350, y: 812 },
   { id: 201, kind: "maintainer", name: "npm", status: "verified publisher", x: 891, y: 349 },
   { id: 202, kind: "maintainer", name: "northstar-platform", status: "verified", x: 884, y: 513 },
-  { id: 301, kind: "vulnerability", name: "GHSA-c2qf-rxjj-qqgw", severity: "high", description: "Regular Expression Denial of Service", x: 850, y: 686 },
+  { id: 301, kind: "vulnerability", name: featuredAdvisory.id, severity: featuredAdvisory.severity.toLowerCase(), description: featuredAdvisory.title, x: 850, y: 686 },
 ];
 
 export const demoEdges: GraphEdge[] = [
@@ -42,17 +43,17 @@ export const demoEdges: GraphEdge[] = [
 ];
 
 export const activeIncident = {
-  id: "GHSA-c2qf-rxjj-qqgw",
+  id: featuredAdvisory.id,
   packageId: 101,
-  title: "Regular Expression Denial of Service",
-  package: "semver",
-  version: "7.3.7",
-  fixedVersion: "7.5.2",
-  severity: "high",
+  title: featuredAdvisory.title,
+  package: featuredAdvisory.package,
+  version: featuredAdvisory.version,
+  fixedVersion: featuredAdvisory.fixed,
+  severity: featuredAdvisory.severity.toLowerCase(),
   discoveredAt: "OSV live",
   publishedAt: "2023-06-21",
-  window: "7.0.0 → 7.5.2",
-  summary: "A real GitHub-reviewed advisory affects semver 7.3.7. HydraShield proves which services resolve the vulnerable version and why.",
+  window: `${featuredAdvisory.introduced} → ${featuredAdvisory.fixed}`,
+  summary: `A real GitHub-reviewed advisory affects ${featuredAdvisory.package} ${featuredAdvisory.version}. HydraShield proves which services resolve the vulnerable version and why.`,
   signal: "OSV + GitHub Advisory Database",
   provenance: "Real advisory · simulated enterprise dependency estate",
 };

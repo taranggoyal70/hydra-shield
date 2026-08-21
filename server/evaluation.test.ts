@@ -5,7 +5,6 @@ describe("evaluateBlastRadiusCases", () => {
   it("reports precision, recall and F1 against labeled service exposure", () => {
     const result = evaluateBlastRadiusCases([
       {
-        id: "transitive",
         edges: [{ source: 1, target: 10 }, { source: 2, target: 11 }, { source: 11, target: 10 }],
         serviceIds: [1, 2, 3],
         compromisedId: 10,
@@ -13,7 +12,6 @@ describe("evaluateBlastRadiusCases", () => {
         expectedServiceIds: [1, 2],
       },
       {
-        id: "isolated",
         edges: [{ source: 4, target: 12 }],
         serviceIds: [4],
         compromisedId: 13,

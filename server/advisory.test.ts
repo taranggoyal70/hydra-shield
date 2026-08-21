@@ -45,7 +45,15 @@ describe("normalizeOsvResponse", () => {
 
   it("links exact vulnerable versions to an advisory node", () => {
     const evidence = normalizeOsvResponse(
-      { vulns: [{ id: "GHSA-test", affected: [{ package: { ecosystem: "npm", name: "semver" } }] }] },
+      {
+        vulns: [{
+          id: "GHSA-test",
+          affected: [{
+            package: { ecosystem: "npm", name: "semver" },
+            ranges: [{ type: "SEMVER", events: [{ introduced: "7.0.0" }, { fixed: "7.5.2" }] }],
+          }],
+        }],
+      },
       "semver",
       "7.3.7",
       "bundled-osv",
@@ -62,5 +70,33 @@ describe("normalizeOsvResponse", () => {
     expect(result.matches).toEqual([2]);
     expect(result.graph.nodes).toContainEqual(expect.objectContaining({ kind: "vulnerability", name: "GHSA-test" }));
     expect(result.graph.edges).toContainEqual(expect.objectContaining({ source: 2, type: "AFFECTED_BY" }));
+  });
+
+  it("links every installed version inside the affected OSV range", () => {
+    const evidence = normalizeOsvResponse(
+      {
+        vulns: [{
+          id: "GHSA-range",
+          affected: [{
+            package: { ecosystem: "npm", name: "semver" },
+            ranges: [{ type: "SEMVER", events: [{ introduced: "7.0.0" }, { fixed: "7.5.2" }] }],
+          }],
+        }],
+      },
+      "semver",
+      "7.3.7",
+      "bundled-osv",
+    );
+    const result = attachAdvisoryEvidence({
+      nodes: [
+        { id: 1, kind: "package", name: "semver@7.0.0" },
+        { id: 2, kind: "package", name: "semver@7.5.1" },
+        { id: 3, kind: "package", name: "semver@7.5.2" },
+        { id: 4, kind: "package", name: "other@7.3.7" },
+      ],
+      edges: [],
+    }, evidence);
+
+    expect(result.matches).toEqual([1, 2]);
   });
 });
