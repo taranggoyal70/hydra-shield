@@ -1,14 +1,16 @@
 import express from "express";
 import path from "node:path";
+import { attachAdvisoryEvidence, getAdvisoryEvidence } from "./advisory.js";
 import { activeIncident, blastRadiusCypher, correlationCypher, demoEdges, demoNodes } from "./demo-data.js";
 import { computeBlastRadius, parseNpmLockfile } from "./domain.js";
+import { runEvaluationBenchmark } from "./evaluation.js";
 import { HydraClient, servicePathsFromRows } from "./hydra.js";
 
 const playbook = [
   { id: "freeze", title: "Freeze affected deploys", detail: "Pause promotion for every service returned by the traversal.", owner: "Platform", eta: "Now" },
-  { id: "pin", title: "Pin the last trusted version", detail: "Override @scope/request to 7.4.1 in every affected lockfile.", owner: "Service owners", eta: "4 min" },
-  { id: "rotate", title: "Rotate exposed credentials", detail: "Revoke CI, registry, cloud and developer tokens reachable during install.", owner: "Security", eta: "12 min" },
-  { id: "rebuild", title: "Rebuild from clean runners", detail: "Invalidate caches and rebuild artifacts created after 09:00 PT.", owner: "Release", eta: "18 min" },
+  { id: "pin", title: "Pin the first fixed version", detail: "Override semver to 7.5.2 in every affected lockfile.", owner: "Service owners", eta: "4 min" },
+  { id: "validate", title: "Re-run dependency resolution", detail: "Prove every production lockfile resolves outside the affected OSV range.", owner: "Security", eta: "9 min" },
+  { id: "rebuild", title: "Promote patched artifacts", detail: "Rebuild and deploy only the services returned by HydraDB.", owner: "Release", eta: "18 min" },
 ];
 
 function snapshotScan(packageId: number) {
@@ -45,14 +47,24 @@ export function createApp(hydra = new HydraClient()) {
   });
 
   app.get("/api/state", async (_request, response) => {
-    const hydraLive = await hydra.isAvailable();
+    const [hydraLive, advisory] = await Promise.all([hydra.isAvailable(), getAdvisoryEvidence()]);
     response.json({
       incident: activeIncident,
+      advisory,
+      evaluation: runEvaluationBenchmark(),
       graph: { nodes: demoNodes, edges: demoEdges },
       playbook,
       hydraLive,
       generatedAt: new Date().toISOString(),
     });
+  });
+
+  app.get("/api/advisory", async (_request, response) => {
+    response.json(await getAdvisoryEvidence());
+  });
+
+  app.get("/api/evaluation", (_request, response) => {
+    response.json(runEvaluationBenchmark());
   });
 
   app.post("/api/scan", async (request, response) => {
@@ -67,9 +79,9 @@ export function createApp(hydra = new HydraClient()) {
     let readEpoch: number | undefined;
     let liveServices: ReturnType<typeof servicePathsFromRows> | undefined;
     let relatedRisk = {
-      maintainer: "release-bot-17",
-      siblingPackage: "@sc0pe/request@7.4.2",
-      confidence: 94,
+      signal: "levenshtein:1",
+      siblingPackage: "senver@7.3.7",
+      confidence: 96,
     };
 
     if (await hydra.isAvailable()) {
@@ -84,9 +96,9 @@ export function createApp(hydra = new HydraClient()) {
         const match = correlation.rows[0];
         if (match) {
           relatedRisk = {
-            maintainer: String(match.maintainer),
+            signal: String(match.signal),
             siblingPackage: String(match.sibling),
-            confidence: 94,
+            confidence: 96,
           };
         }
       } catch (error) {
@@ -108,7 +120,7 @@ export function createApp(hydra = new HydraClient()) {
         affectedServices: services.length,
         criticalServices,
         dependencyPaths: services.reduce((total, service) => total + service.hops, 0),
-        exposedCredentials: 7,
+        queriesExecuted: source === "hydradb" ? 2 : 0,
       },
       relatedRisk,
     });
@@ -122,7 +134,8 @@ export function createApp(hydra = new HydraClient()) {
     }
 
     try {
-      const graph = parseNpmLockfile(serviceName, request.body.lockfile);
+      const advisory = await getAdvisoryEvidence();
+      const { graph, matches } = attachAdvisoryEvidence(parseNpmLockfile(serviceName, request.body.lockfile), advisory);
       const hydraLive = await hydra.isAvailable();
       if (hydraLive) await hydra.seed(graph.nodes, graph.edges);
       response.status(201).json({
@@ -130,6 +143,8 @@ export function createApp(hydra = new HydraClient()) {
         serviceName,
         nodes: graph.nodes.length,
         relationships: graph.edges.length,
+        advisoryMatches: matches.length,
+        advisory: matches.length > 0 ? advisory : undefined,
         message: hydraLive
           ? "Lockfile graph written to HydraDB."
           : "Lockfile parsed. Start HydraDB to persist this graph.",

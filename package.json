@@ -8,6 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "benchmark": "tsx scripts/benchmark.ts",
+    "benchmark:hydra": "tsx scripts/benchmark-hydra.ts",
     "start": "NODE_ENV=production tsx server/index.ts",
     "setup:hydra": "node scripts/setup-local-hydra.mjs",
     "seed": "tsx server/seed-cli.ts"

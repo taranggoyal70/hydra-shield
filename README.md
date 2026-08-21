@@ -1,24 +1,37 @@
 # HydraShield
 
-HydraShield is a graph-native incident response console for software supply-chain attacks. It answers the question defenders face when a malicious package lands: **which services are exposed right now, through which exact dependency paths, and what should we contain first?**
+HydraShield is a graph-native incident response console for software supply-chain attacks. It answers the question defenders face when an advisory lands: **which services resolve the vulnerable version, through which exact dependency paths, and what should we contain first?**
 
 Built for Hack Hydra 2026, Track 02A: Supply-chain blast radius.
 
 **Live demo:** [hydra-shield-six.vercel.app](https://hydra-shield-six.vercel.app)
 
+**Source:** [github.com/taranggoyal70/hydra-shield](https://github.com/taranggoyal70/hydra-shield)
+
+**Ground truth:** [GHSA-c2qf-rxjj-qqgw](https://osv.dev/vulnerability/GHSA-c2qf-rxjj-qqgw), alias CVE-2022-25883, affects the demonstrated `semver@7.3.7` and is fixed in `7.5.2`.
+
+## Judge fast path
+
+1. Open the live demo and follow the real OSV advisory into five exact service paths.
+2. Inspect [`/api/advisory`](https://hydra-shield-six.vercel.app/api/advisory) for normalized OSV/GitHub Advisory evidence.
+3. Inspect [`/api/evaluation`](https://hydra-shield-six.vercel.app/api/evaluation) for the labeled correctness corpus and timing distribution.
+4. Run locally with Docker to see the same scan execute against HydraDB with causal reads and a real read epoch.
+
 ## The demo
 
-The included incident simulates a stolen npm automation token publishing a credential-stealing package at 09:00. By 09:06, the artifact has reached direct and transitive dependents across a service estate. HydraShield:
+The included incident combines a real, GitHub-reviewed public advisory with a clearly labeled simulated enterprise dependency estate. HydraShield:
 
 1. Traverses up to five dependency hops in one bounded OpenCypher query.
 2. Returns every affected service and its owner, criticality and exact install path.
-3. Correlates the compromised publisher with a lookalike sibling package.
+3. Correlates the affected package with a one-edit typosquat candidate.
 4. Generates a prioritized, interactive containment plan.
 5. Imports real npm v2/v3 `package-lock.json` files into HydraDB.
+6. Fetches and normalizes live OSV evidence, then links exact lockfile versions to vulnerability nodes.
+7. Reports precision, recall, F1, query latency and bounded query counts without inventing cost data.
 
 ## Why HydraDB is essential
 
-A vector index can find packages with similar descriptions. It cannot prove that a service resolves a compromised version through four transitive dependencies. HydraShield stores services, versioned packages, maintainers and vulnerabilities as nodes, with `DEPENDS_ON`, `MAINTAINS`, `AFFECTED_BY` and `SIMILAR_TO` relationships.
+A vector index can find packages with similar descriptions. It cannot prove that a service resolves a vulnerable version through four transitive dependencies. HydraShield stores services, versioned packages, maintainers and vulnerabilities as nodes, with `DEPENDS_ON`, `MAINTAINS`, `AFFECTED_BY` and `SIMILAR_TO` relationships.
 
 The central blast-radius query is executed by HydraDB:
 
@@ -35,7 +48,7 @@ YIELD path
 RETURN path
 ```
 
-HydraDB contributes bounded variable-length traversal, reverse adjacency, durable object-store-backed graph state, and snapshot-consistent causal reads. Without it, the product loses its core claim: exact, explainable transitive exposure at incident speed.
+HydraDB contributes bounded variable-length traversal, reverse adjacency, durable object-store-backed graph state, and snapshot-consistent causal reads. Without it, the product loses its core claim: exact, explainable transitive exposure at incident speed. The deterministic fallback exists only so the public Vercel UI remains reviewable when a stateful HydraDB node is not attached.
 
 ## Architecture
 
@@ -70,6 +83,14 @@ Open [http://localhost:5173](http://localhost:5173). The API runs at `http://127
 
 HydraShield automatically seeds the demonstration graph when HydraDB is ready. If HydraDB is not running, the product remains explorable using a clearly labeled deterministic demo snapshot. Lockfile imports are only persisted when HydraDB is live.
 
+Run the real-engine benchmark after seeding:
+
+```bash
+npm run benchmark:hydra
+```
+
+On the included 18-entity graph, a local 50-run causal-read sample measured 0.96 ms p50 and 1.83 ms p95 on the development machine. Re-run the command on your hardware rather than treating those numbers as universal.
+
 ## Deploy to Vercel
 
 Vercel serves the Vite client from its CDN and routes `/api/*` to the Express entrypoint at `api/index.ts`, keeping the product on one deployment and one origin.
@@ -80,7 +101,7 @@ vercel build --prod
 vercel deploy --prebuilt --prod
 ```
 
-Without remote HydraDB environment variables, the hosted demonstration uses the clearly labeled deterministic snapshot. To connect a hosted HydraDB cluster, set the `HYDRA_*` variables below in Vercel Production Environment Variables.
+Vercel hosts the full-stack React and Express application. A HydraDB node is a long-lived stateful service, so the public deployment uses the clearly labeled deterministic reference mode unless a separately hosted HydraDB endpoint is supplied through the `HYDRA_*` variables. The local Docker path is the reproducible real-backend proof.
 
 ## Environment
 
@@ -104,6 +125,8 @@ The defaults match `docker-compose.yml`.
 npm run typecheck
 npm test
 npm run build
+npm run benchmark
+npm run benchmark:hydra # requires the local HydraDB container
 curl http://127.0.0.1:8787/api/health
 ```
 
@@ -111,6 +134,8 @@ curl http://127.0.0.1:8787/api/health
 
 ```text
 server/app.ts         API routes, scan orchestration and lockfile ingestion
+server/advisory.ts    Live OSV ingestion, normalization and graph linking
+server/evaluation.ts  Labeled precision/recall/F1 regression corpus
 server/hydra.ts       Typed HydraDB HTTP client and idempotent graph seeding
 server/domain.ts      Lockfile parser and deterministic traversal reference
 server/demo-data.ts   Synthetic, clearly scoped demonstration incident
@@ -124,7 +149,7 @@ src/styles.css        Responsive visual system and impact-wave motion
 - [HydraDB](https://github.com/hydra-db/hydradb), AGPL-3.0, is run as the graph database service and is not redistributed in this repository.
 - React, Express, Vite, Lucide and all other npm packages retain their respective licenses. See `package-lock.json` for the complete dependency inventory.
 
-The incident names, package names, maintainers and vulnerability identifier in the demo are synthetic.
+The enterprise service names and internal packages are synthetic. The OSV/GitHub advisory, CVE alias, affected package version and fixed version are real and linked to their primary records in the product.
 
 ## License
 

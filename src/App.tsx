@@ -10,14 +10,17 @@ import {
   Clock3,
   Code2,
   Download,
+  ExternalLink,
   FileJson,
   Fingerprint,
+  Gauge,
   GitBranch,
   Hexagon,
   Network,
   Play,
   RefreshCw,
   Search,
+  ShieldCheck,
   ShieldAlert,
   Sparkles,
   Upload,
@@ -55,12 +58,41 @@ interface Incident {
   title: string;
   package: string;
   version: string;
+  fixedVersion: string;
   severity: string;
   discoveredAt: string;
   publishedAt: string;
   window: string;
   summary: string;
   signal: string;
+  provenance: string;
+}
+
+interface AdvisoryEvidence {
+  id: string;
+  aliases: string[];
+  package: string;
+  version: string;
+  summary: string;
+  severity: string;
+  introduced: string;
+  fixed: string;
+  source: "osv-live" | "bundled-osv";
+  sourceLabel: string;
+  references: string[];
+  fetchedAt: string;
+}
+
+interface EvaluationResult {
+  cases: number;
+  precision: number;
+  recall: number;
+  f1: number;
+  corpus: string;
+  iterations: number;
+  p50Ms: number;
+  p95Ms: number;
+  methodology: string;
 }
 
 interface PlaybookItem {
@@ -73,6 +105,8 @@ interface PlaybookItem {
 
 interface AppState {
   incident: Incident;
+  advisory: AdvisoryEvidence;
+  evaluation: EvaluationResult;
   graph: { nodes: GraphNode[]; edges: GraphEdge[] };
   playbook: PlaybookItem[];
   hydraLive: boolean;
@@ -99,9 +133,9 @@ interface ScanResult {
     affectedServices: number;
     criticalServices: number;
     dependencyPaths: number;
-    exposedCredentials: number;
+    queriesExecuted: number;
   };
-  relatedRisk: { maintainer: string; siblingPackage: string; confidence: number };
+  relatedRisk: { signal: string; siblingPackage: string; confidence: number };
 }
 
 const nodeTone: Record<NodeKind, string> = {
@@ -233,9 +267,10 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ serviceName, lockfile }),
       });
-      const result = (await response.json()) as { message?: string; error?: string; nodes?: number; relationships?: number };
+      const result = (await response.json()) as { message?: string; error?: string; nodes?: number; relationships?: number; advisoryMatches?: number };
       if (!response.ok) throw new Error(result.error ?? "Import failed");
-      setStatus(`${result.message} ${result.nodes} entities and ${result.relationships} relationships found.`);
+      const match = result.advisoryMatches ? ` ${result.advisoryMatches} exact OSV match linked.` : "";
+      setStatus(`${result.message} ${result.nodes} entities and ${result.relationships} relationships found.${match}`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "The selected file is not valid JSON.");
     } finally {
@@ -343,6 +378,7 @@ export default function App() {
         <nav aria-label="Primary navigation">
           <a className="active" href="#incident">Incident</a>
           <a href="#graph">Graph</a>
+          <a href="#evidence">Evidence</a>
           <a href="#response">Response</a>
           <a href="#query">Query</a>
         </nav>
@@ -356,25 +392,25 @@ export default function App() {
 
       <main id="top">
         <section className="incident-strip" id="incident">
-          <div className="incident-id"><AlertTriangle size={16} /> Active incident <span>HSA-2026-0042</span></div>
+          <div className="incident-id"><AlertTriangle size={16} /> Active incident <span>{state.incident.id}</span></div>
           <p>{state.incident.summary}</p>
           <button onClick={downloadBrief} disabled={!scan}><Download size={15} /> Export brief</button>
         </section>
 
         <section className="hero-head">
           <div>
-            <p className="eyebrow">Supply-chain command center · 09:06 PT</p>
+            <p className="eyebrow">Real advisory intelligence · simulated enterprise estate</p>
             <h1>See the blast radius<br /><em>before it spreads.</em></h1>
           </div>
           <div className="incident-card">
             <div className="incident-card-head">
-              <span className="severity-pill">Critical</span>
+              <span className="severity-pill">{state.advisory.severity}</span>
               <span><Clock3 size={14} /> Published {state.incident.publishedAt}</span>
             </div>
             <code>{state.incident.package}@{state.incident.version}</code>
             <p>{state.incident.title}</p>
             <div className="attack-clock">
-              <span>Publish</span><i /><strong>{state.incident.window}</strong><i /><span>Detection</span>
+              <span>Introduced</span><i /><strong>{state.incident.window}</strong><i /><span>Fixed</span>
             </div>
           </div>
         </section>
@@ -384,7 +420,48 @@ export default function App() {
           <article><span>Tier 0 exposed</span><strong>{scan?.metrics.criticalServices ?? "–"}</strong><small>customer critical</small></article>
           <article><span>Dependency hops</span><strong>{scan?.metrics.dependencyPaths ?? "–"}</strong><small>across all paths</small></article>
           <article><span>Query time</span><strong>{scan ? `${scan.elapsedMs}ms` : "–"}</strong><small>{scan?.source === "hydradb" ? "HydraDB causal read" : "demo traversal"}</small></article>
-          <article className="risk-metric"><span>Confidence</span><strong>{scan ? `${scan.relatedRisk.confidence}%` : "–"}</strong><small>shared identity risk</small></article>
+          <article className="risk-metric"><span>OSV match</span><strong>{state.advisory.id ? "Exact" : "–"}</strong><small>{state.advisory.sourceLabel}</small></article>
+        </section>
+
+        <section className="evidence-grid" id="evidence">
+          <article className="panel advisory-panel">
+            <div className="evidence-kicker">
+              <span className={state.advisory.source === "osv-live" ? "source-live" : ""}><i /> {state.advisory.sourceLabel}</span>
+              <span><ShieldCheck size={13} /> GitHub reviewed</span>
+            </div>
+            <div className="advisory-copy">
+              <div>
+                <p className="eyebrow">Ground-truth advisory</p>
+                <h2>{state.advisory.id}</h2>
+                <p>{state.advisory.summary}</p>
+              </div>
+              <div className="advisory-range" aria-label="Affected version range">
+                <span>affected range</span>
+                <strong>{state.advisory.introduced} <ArrowRight size={15} /> {state.advisory.fixed}</strong>
+                <small>scanning <code>{state.advisory.package}@{state.advisory.version}</code></small>
+              </div>
+            </div>
+            <div className="evidence-links">
+              <span>{state.advisory.aliases.join(" · ")}</span>
+              {state.advisory.references.slice(0, 2).map((reference, index) => (
+                <a key={reference} href={reference} target="_blank" rel="noreferrer">
+                  {index === 0 ? "OSV record" : "Primary advisory"} <ExternalLink size={11} />
+                </a>
+              ))}
+            </div>
+          </article>
+
+          <aside className="panel evaluation-panel">
+            <div className="evaluation-heading"><Gauge size={18} /><span><small>Regression corpus</small><strong>Measured, not claimed</strong></span></div>
+            <div className="evaluation-metrics">
+              <span><small>Precision</small><strong>{Math.round(state.evaluation.precision * 100)}%</strong></span>
+              <span><small>Recall</small><strong>{Math.round(state.evaluation.recall * 100)}%</strong></span>
+              <span><small>F1</small><strong>{state.evaluation.f1.toFixed(2)}</strong></span>
+              <span><small>p95</small><strong>{state.evaluation.p95Ms}ms</strong></span>
+            </div>
+            <p>{state.evaluation.corpus}. {state.evaluation.iterations} timed runs.</p>
+            <a href="/api/evaluation" target="_blank" rel="noreferrer">Inspect raw evaluation <ExternalLink size={11} /></a>
+          </aside>
         </section>
 
         <section className="workspace" id="graph" ref={graphRef}>
@@ -429,8 +506,8 @@ export default function App() {
             </div>
             <div className="correlation-card">
               <div><Fingerprint size={18} /><span><small>Identity correlation</small><strong>Shared publisher detected</strong></span></div>
-              <p><code>{scan?.relatedRisk.maintainer}</code> also maintains lookalike <code>{scan?.relatedRisk.siblingPackage}</code>.</p>
-              <button>Investigate cluster <ArrowRight size={13} /></button>
+              <p><code>{scan?.relatedRisk.siblingPackage}</code> is one edit from the affected package name. Signal: <code>{scan?.relatedRisk.signal}</code>.</p>
+              <button>Inspect typosquat candidate <ArrowRight size={13} /></button>
             </div>
           </aside>
         </section>
@@ -464,12 +541,12 @@ export default function App() {
           </div>
 
           <div className="panel timeline-panel">
-            <div className="panel-heading compact"><div><p className="eyebrow">Attack clock</p><h2>Six minutes to exposure</h2></div><Activity size={20} /></div>
+            <div className="panel-heading compact"><div><p className="eyebrow">Evidence chain</p><h2>From advisory to action</h2></div><Activity size={20} /></div>
             <ol className="timeline">
-              <li><time>09:00:00</time><span><strong>Malicious version published</strong><small>Registry accepts @scope/request@7.4.2</small></span></li>
-              <li><time>09:01:14</time><span><strong>First CI resolution</strong><small>event-relay resolves the poisoned artifact</small></span></li>
-              <li><time>09:03:41</time><span><strong>Transitive installs fan out</strong><small>Three upstream packages pull the release</small></span></li>
-              <li className="active"><time>09:06:08</time><span><strong>HydraShield closes the graph</strong><small>Four services, seven credentials, one publisher cluster</small></span></li>
+              <li><time>01</time><span><strong>OSV advisory normalized</strong><small>GHSA and CVE identity, severity, ranges and fix captured</small></span></li>
+              <li><time>02</time><span><strong>Exact lockfile version matched</strong><small>semver@7.3.7 is inside the reviewed affected range</small></span></li>
+              <li><time>03</time><span><strong>HydraDB traverses reverse dependencies</strong><small>Every service path is bounded, exact and explainable</small></span></li>
+              <li className="active"><time>04</time><span><strong>Containment targets ranked</strong><small>Only exposed services move into the response plan</small></span></li>
             </ol>
           </div>
         </section>
@@ -495,7 +572,7 @@ export default function App() {
         <footer>
           <div className="brand footer-brand"><span className="brand-mark"><Hexagon size={22} /><ShieldAlert size={12} /></span><span><strong>Hydra</strong>Shield</span></div>
           <p>Graph-native incident response, built on the HydraDB open-source engine.</p>
-          <span><Code2 size={14} /> Hack Hydra · Track 02</span>
+          <span><Code2 size={14} /> Hack Hydra · Track 02A</span>
         </footer>
       </main>
 
