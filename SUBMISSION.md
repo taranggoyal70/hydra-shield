@@ -46,55 +46,59 @@ Speak calmly and treat this as a product walkthrough, not a memorized pitch. The
 
 “Hi, I’m Tarang, and this is HydraShield.
 
-When a vulnerability is published, teams learn which package is affected. They still need to know which services use that exact version, how it reached them, and what to fix first. HydraShield answers that as an explainable dependency graph.”
+Here’s the problem. A security advisory tells you what is broken, but not what inside your company is in danger. It’s like a fire alarm that detects smoke but cannot name the rooms burning.
+
+HydraShield gives you that map.”
 
 ### 0:25-0:48 - Real vulnerability evidence
 
 **[Scroll to the advisory evidence.]**
 
-“This is a real GitHub-reviewed advisory, also known as CVE-2022-25883. The evidence comes from OSV, including the affected range and first fixed version. The company dependency estate is simulated, but the vulnerability evidence is real.”
+“This is a real GitHub-reviewed vulnerability from OSV. HydraShield pulls in the affected versions and the first safe version. The company services are simulated, but the security evidence is real.”
 
 ### 0:48-1:28 - Find the blast radius
 
 **[Scroll to the graph and click Run impact scan.]**
 
-“Now I’ll run the impact scan.
+“Now watch what happens when I run the scan.
 
-HydraDB starts at the vulnerable package and follows dependencies backwards. One bounded traversal finds five affected services, including three customer-critical Tier 0 services.
+HydraDB starts with the bad package and walks backwards through the dependency chain. It finds five affected services. Three are customer-critical.
 
-This is more than a list. Each service includes the exact exposure path. Checkout reaches the package in two hops, while Identity reaches it through a three-hop transitive chain. That path is the proof a responder needs before stopping a deployment.”
+The important part is the proof. Every answer includes the exact path. Checkout reaches the package in two steps. Identity never installed it directly, but is still exposed three levels down. A normal package search can miss that.”
 
 ### 1:28-1:50 - Investigate a related threat
 
 **[Click Inspect typosquat candidate.]**
 
-“The graph also finds related supply-chain signals. Here, `senver` is only one edit away from `semver`. Inspecting it focuses the suspicious node and shows the relationship without losing the original incident context.”
+“It also catches something else. `Senver` is only one letter away from `semver`. That could be a typosquat. I can inspect it without leaving the original investigation.”
 
 ### 1:50-2:15 - Import a real lockfile
 
 **[Click Import lockfile. Enter `payments-api`, choose `demo/vulnerable-package-lock.json`, and click Build dependency graph.]**
 
-“HydraShield can also ingest a normal npm package-lock file. I’ll import this service as payments-api. Resolved packages become versioned graph nodes, dependency links are preserved, and the exact vulnerable version connects to the OSV advisory. There is no separate inventory to maintain by hand.”
+“Teams do not build this graph by hand. HydraShield uses the package-lock files they already have.
+
+I’ll import payments-api. Its packages and dependency links enter the graph, and the vulnerable version connects to the advisory automatically.”
 
 ### 2:15-2:38 - Prove correctness and performance
 
 **[Close the dialog and point to the evaluation card, then the query result.]**
 
-“The result is measurable, not just visually convincing. The regression covers transitive dependencies, version isolation, cycles, and depth limits, and reports precision, recall, F1, and p95 latency.
+“A good-looking graph means nothing if the answer is wrong. So I test hidden dependencies, different versions, cycles, and depth limits. HydraShield reports precision, recall, F1, and latency.
 
-In local mode this scan runs against HydraDB, and the read epoch proves it came from a causally consistent graph read.”
+This read epoch also shows that the answer came from a consistent HydraDB snapshot.”
 
 ### 2:38-2:55 - Turn evidence into action
 
 **[Scroll to the containment plan and mark the first item complete.]**
 
-“Finally, HydraShield turns the result into an action plan: freeze only affected deployments, pin the fixed version, re-resolve the lockfiles, and promote patched services. The incident brief can also be exported for the response team.”
+“Most security tools stop at the alert. HydraShield keeps going. It shows what to pause, which safe version to use, what to rebuild, and what can stay running. I can also export the incident for the response team.”
 
 ### 2:55-3:00 - Close
 
 **[Return briefly to the graph.]**
 
-“HydraShield turns a public advisory into an exact containment decision. HydraDB makes that decision fast, transitive, and explainable.”
+“HydraShield turns one public warning into an exact list of what is at risk, proof of why, and a plan to fix it. That is incident response powered by HydraDB.”
 
 ## Required capture checklist
 
